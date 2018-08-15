@@ -200,7 +200,11 @@ goto Loop;
 
 一个有10个指针的数组，该指针指向一个函数，该函数有一个整型参数并返回一个整型数 int (*a[10])(int);
 
-14. 中断是嵌入式系统中重要的组成部分，这导致了很多编译开发商提供一种扩展—让标准C支持中断。具代表事实是，产生了一个新的关键字 __interrupt
+int (*a[10])(int);
+
+14. 中断是嵌入式系统中重要的组成部分，这导致了很多编译开发商提供一种扩展—让标准C支持中断。
+
+    具代表事实是，产生了一个新的关键字 __interrupt
 
 16. memcpy函数的实现
 
@@ -210,7 +214,6 @@ void *memcpy(void *dest, const void *src, size_t count) {
 
  const char *s = src;
 
- 
 
  while (count--)
 
@@ -219,6 +222,7 @@ void *memcpy(void *dest, const void *src, size_t count) {
   return dest;
 
 }
+
 
 17. Strcpy函数实现
 
@@ -238,17 +242,17 @@ char *strcpy(char *dst,const char *src) {
 
 char *strcat(char *strDes, const char *strSrc){
 
-assert((strDes != NULL) && (strSrc != NULL));
+    assert((strDes != NULL) && (strSrc != NULL));
 
-char *address = strDes;
+    char *address = strDes;
 
-while (*strDes != ‘\0′)
+    while (*strDes != ‘\0′)
 
-++ strDes;
+        ++strDes;
 
-while ((*strDes ++ = *strSrc ++) != ‘\0′)
+    while ((*strDes ++ = *strSrc ++) != ‘\0′)
 
-return address;
+    return address;
 
 }
 
@@ -1610,3 +1614,6 @@ b.如果小报告里边的事情都是事实也就是说确实是本人做的不
 5. 项目中遇到的难题，你是如何解决的?
 
 A．时间 b要求 c.方法
+
+原文链接
+https://www.cnblogs.com/nancymake/p/6516933.html
