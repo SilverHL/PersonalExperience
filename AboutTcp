@@ -21,6 +21,10 @@ l -----ACK      ----> s
 connect 如果在第二次握手的时候 s给l重发的包没有收到 那么此时会出现什么情况？
         从第一次握手的时候发
 如果server端没有调用accept此时会出现什么情况 
+    内核为服务器维护一个半连接队列 当listen调用时 一旦有来自client的SYN包到达 ing 
+    内核会在半连接队列末尾新增一个node 这个node会一直存在 当第三次握手成功结束时 
+    会将半连接队列头的节点move至已完成队列尾部 而此时若进程调用accept 就会将已完成队列头部
+    节点给进程 当全连接队列为空时 此时调用accept会阻塞
 关于server的半连接和全连接队列 具体时期会出现什么情况
 
 tcpdump抓包
@@ -161,3 +165,21 @@ tcp是流式协议
 
 HTTP协议 应用层协议
 
+GET /index.php HTTP/1.1\r\n
+Host: www.hootina.org\r\n
+Connection: keep-alive\r\n   /*加上这个字段 是建议（加粗）服务器将此http链接设置为长连接*/
+Cache-Control: max-age=0\r\n
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8\r\n
+content-length: 8
+User-Agent: Mozilla/5.0\r\n
+\r\n     /*包头*/
+abcdefgh /*包体 长度为8 */
+
+http包头的Content-Length值是包体的大小
+head 只请求http头部分 \r\n  * 2结尾
+get  请求附加在网址后面 有长度限制
+post 放在http包里面 
+ 
+chunk技术 将http分成很多段 
+
+http代理、socks4代理与socks5代理如何编码实现
