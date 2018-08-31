@@ -51,6 +51,25 @@ void p1()
 此时运行结果打印的y值是！200 
 因为弱定义和强定义同时存在时 肯定会选择强定义 那么 最后链接的时候 p1中y 和z 的位置 
 就被替换成了文件1中y z的位置 也就是指向那里 从而修改了值
+
+
+然后是符号解析的过程 栗子见./test/linkTest
+在这个栗子中 我们最后使用了gcc -static -o main main.o ./myLib.a 来链接
+符号解析的时候有三个集合 
+    E excute(可重定位文件集合) 
+    U undefine（未定义符号集合） 
+    D define （已定义符号集合）
+然后先是 main.o 文件 首先main.o加入到E中 然后main中有main函数 那么main加入到D中 
+然后在main.o的elf文件的.systab即符号表中 myFunc1的符号的ndx字段值为UDF 说明是未定义的
+所以加入到U中 然后继续下一个 myLib.a 这里面有myProc1.o 和myProc2.o 两个可重定位文件
+然后分别与U中的符号比对 发现myProc1.o中有myFunc1符号 那么myProc1.o加入E myFunc1从U转移到D
+然后printf符号也是一样 从默认的libc库中比对并加入到D中  
+结束以后 如果U仍为非空集 那么链接失败  
+
+成功以后  我们的E集合需要在下一步重定位的合并中用到 
+而D集合需要在下一步确定符号的虚拟空间地址的时候用到
+
+
 {
     这里是关于ELF文件头的部分知识 
 
@@ -199,11 +218,12 @@ There are 9 program headers, starting at offset 64
 下面的mapping就是哪个段中是由哪几个程序头组成的
 
 }
+
 然后第二个步骤应该是
 将所有的代码段 数据段合并在一起 然后计算每个符号在虚拟空间中的绝对地址 
 最后将所有引用符号的地方替换成地址
 
-
+重定位的信息在elf的rel.text节和rel.data节 这两个节
 
 
 

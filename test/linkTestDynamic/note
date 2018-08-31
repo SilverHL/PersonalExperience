@@ -1,0 +1,11 @@
+将两个文件编译
+gcc -c myProc1.c myProc2.c
+
+然后打包成动态链接库
+gcc -shared -fPIC -o myLib.so myProc1.o myProc2.o 
+
+然后在main函数中调用myFunc1 编译
+gcc -c main.c
+
+然后链接 
+gcc -static -o main main.o ./myLib.a
