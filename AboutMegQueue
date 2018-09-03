@@ -1,0 +1,132 @@
+消息队列
+
+消息队列就是一个消息的链表 全局数据结构struct ipc_ids msg_ids
+msg_ids中有一个struct ipc_id* 指向一个struct ipc_id数组 其中
+每一个ipc_id中都有一个struct kern_ipc_perm指针 这个指向一个struce msg_queue的第一个成员
+而每一个kern_ipc_perm中 都有一个key_t类型的key 指向唯一一个消息队列
+struct msg_queue就是消息队列头 其中连接了一整个消息队列
+struct kern_ipc_perm
+{
+    key_t key;
+    uid_t uid;
+    gid_t gid;
+    uid_t cuid;
+    gid_t cgid;
+    mode_t mode;
+    unsigned long seq;
+};
+
+struct msg_queue
+{
+    struct kern_ipc_perm;
+    ...
+    ...
+    struct list_head q_sender;
+};
+
+消息队列的内核持续性 要求每个消息队列在系统范围内都必须有一个唯一的键值 要获得一个消息队列
+的套接字 只需要该消息队列的键值
+
+struct msgbuf
+{
+    long mtype;
+    char mtext[1];
+};
+
+mtype代表消息类型 mtext是消息内容 对于发送消息来说 先预置一个msgbuf缓冲区写入消息类型
+和内容 然后调用发送函数 读取消息也是通过这样的一个msgbuf缓冲区
+
+消息队列的信息基本上都保存在消息队列头中 因此可以分配一个类似消息队列头的结构msqid_ds来
+返回消息队列的属性
+
+struct msg_queue
+{
+    struct kern_ipc_perm q_perm;
+    time_t q_stime;
+    time_t q_rtime;
+    time_t q_ctime;
+    unsigned long q_cbytes;
+    unsigned long q_qnum;
+    unsigned long q_qbytes;
+    pid_t q_lspid;
+    pid_t q_lrpid;
+    struct list_head q_messages;
+    struct list_head q_receivers;
+    struct list_head q_sender;
+};
+
+struct msqid_ds {
+    struct ipc_perm msg_perm;
+    struct msg *msg_first;      /* first message on queue,unused  */
+    struct msg *msg_last;       /* last message in queue,unused */
+    __kernel_time_t msg_stime;  /* last msgsnd time */
+    __kernel_time_t msg_rtime;  /* last msgrcv time */
+    __kernel_time_t msg_ctime;  /* last change time */
+    unsigned long  msg_lcbytes; /* Reuse junk fields for 32 bit */
+    unsigned long  msg_lqbytes; /* ditto */
+    unsigned short msg_cbytes;  /* current number of bytes on queue */
+    unsigned short msg_qnum;    /* number of messages in queue */
+    unsigned short msg_qbytes;  /* max number of bytes on queue */
+    __kernel_ipc_pid_t msg_lspid;   /* pid of last msgsnd */
+    __kernel_ipc_pid_t msg_lrpid;   /* last receive pid */
+};
+
+msgctl(msgid, IPC_STAT, struct msqid_ds* Rbuf);
+
+msgctl(msgid, IPC_SET, struct msqid_ds *Wbuf);
+
+    文件名到键值
+    key_t ftok(char *pathname, char proj);
+    
+    key = ftok(pathm 'a');
+    ipc_id = (MSGGET, (int)key, flags, 0, NULL, 0);
+
+    linux为 System V进程间通信的三种方式（消息队列 信号灯 共享内存区）提供了一个统一的用户界面
+    int ipc(unsigned int call, int first, int second, int third, void *ptr, long fifth);
+    第一个参数指明对
+    IPC对象的操作方式 对消息队列来说有 MSGSND, MSGRCV, MSGGET, MSGCTL 分别是
+    向消息队列发送消息 从消息队列读取消息 打开或创建消息队列 控制消息参数
+    first代表唯一的IPC对象  
+
+    int ipc(MSGGET, int first, int second, int third, void *ptr, long fifth);
+    对应的System V是 int msgget((key_t)first, second);
+    int msgget(key_t key, int msgflg);
+    如果没有消息队列对应key 并且flag中包含一个IPC_CREAT
+    或者key参数为ICP_PRIVATE位 代表创建新的消息队列
+     
+    msgflg 可以为IPC_CREAT IPC_EXCL IPC_NOWAIT
+
+    int ipc(MSGCTL, int first, int second, int third, void *ptr, long fifth);
+    对应的操作是 int msgctl(first, second, (struct msqie_ds*)ptr);
+
+    int msgctl(int msqid, int cmd, struct msqid_fd*buf);
+    IPC_STAT：该命令用来获取消息队列信息，返回的信息存贮在buf指向的msqid结构中；
+    IPC_SET：该命令用来设置消息队列的属性，要设置的属性存储在buf指向的msqid结构中；可设置属性包括：msg_perm.uid、msg_perm.gid、msg_perm.mode以及msg_qbytes，同时，也影响msg_ctime成员。
+    IPC_RMID：删除msqid标识的消息队列；
+
+    int ipc(MSGSND, int first, int second, int third, void *ptr, long fifth);
+    int msgsnd(first, (struct msgbuf*)ptr, second, third);
+    
+    int msgsnd(int msqid, struct msgbuf *msgp, int msgsz, int msgflg);
+    向msgid所指的消息队列发送一个消息  
+    有意义的flag为IPC_NOWAIT 即消息队列没有足够空间是是否要等待
+    要么是当前消息的大小与当前消息队列中和字节数和超过了消息队列的总容量
+    要么是消息队列的消息树不小于消息队列的总容量
+
+    int ipc(MSGRCV, int first, int second, int third, void *ptr, long fifth);
+    int msgrcv(first, (struct msgbuf*)ptr, second, fifth, third);
+
+    int msgrcv(int msqid, struct msgbuf *msgp, int msgsz, long msgtyp, int msgflg);
+    msqid就是消息队列头对应的fd 消息返回后存储在msgp msgsz指定msgbuf或mtext成员的长度
+    msgtyp为请求读取的消息类型 msgflg可以为以下几个常值的
+    IPC_NOWAIT 如果没有满足条件的消息 调用立即返回 errno = ENOMSG
+    IPC_EXCEPT 与msgtyp>0配合使用 返回队列中第一个类型不为msgtype的消息
+    IPC_NOERROR 如果队列中满足条件的消息内容大于请求的msgsz字节那么久截断 
+    关于msgtyp参数 
+    如果msgtyp == 0 那么返回消息队列中的第一个消息
+    如果大于0 那么返回消息队列中第一个值为msgtyp的消息 如果msgflg指定IPC_EXCEPT的话就相反
+    如果小于0 那么返回第一个小于等于msgtyp绝对值的消息
+
+    
+
+
