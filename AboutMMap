@@ -1,0 +1,42 @@
+共享内存
+
+一般调用方式为 
+    fd = open(name, flag, mode);
+    if (fd < 0)
+        ...
+    ptr = mmap(NULL, len, PORT_READ | PORT_WRITE, MAP_SHARED, fd, 0);
+    使用特殊文件提供匿名内存映射适用于具有亲缘关系的进程之间 父进程先调用mmap 
+    然后调用fork 子进程继承父进程匿名映射后的地址空间 这样父子进程就可以通过映射区域进行
+    通信了 不必指定具体文件 只要设置相应的标志即可
+
+    int munmap(void *addr, size_e len);
+    解除映射  原有映射被解除后再访问将会导致段错误的发生
+
+    int msync(void *addr, size_tlen, int flags);
+    进程在映射空间对共享内容的改变并不会直接写回到磁盘 在调用munmap以后才执行该操作 
+    可以调用msync实现磁盘上文件内容和共享内存区的内容一致
+
+
+还有System V的共享内存 是通过shmget系统调用来的
+进程间共享的内存数据被放在一个叫IPC共享内存区的地方 shmget可以获得或创建一个IPC共享内存
+并返回相应的标识符 初始化该共享内存区相应的shmid_kernel结构注同时，还将在特殊文件系
+统shm中，创建并打开一个同名文件，并在内存中建立起该文件的相应dentry及inode结构，新打
+开的文件不属于任何一个进程（任何进程都可以访问该共享内存区）。所有这一切都是系统调
+用shmget完成的。 和epoll内核中的那个虚拟fd比较像 
+
+struct shmid_kernel /* private to the kernel */
+{
+    struct kern_ipc_perm    shm_perm;
+    struct file *       shm_file;           //存储了将被映射文件的地址 
+                                            //这个文件被映射到进程的地址空间 
+                                            //可以直接通过访问内存的方式进行访问
+    int         id;
+    unsigned long       shm_nattch;
+    unsigned long       shm_segsz;
+    time_t          shm_atim;
+    time_t          shm_dtim;
+    time_t          shm_ctim;
+    pid_t           shm_cprid;
+    pid_t           shm_lprid;
+};
+
