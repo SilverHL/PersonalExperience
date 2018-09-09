@@ -1,0 +1,31 @@
+关于Linux的伙伴系统 
+主要思想是将大块内存块分割成2的n次幂大小 如 64kb 128k 256k 512k再到1M 
+最小为64k  如果有相同大小的堆块 那么就合并 
+struct zone这个数据结构是用来管理 相关的管理区 其中有一个struct free_zone是用来管理空闲的区块
+
+struct zone 
+{
+    ...
+    struct free_zone free_area[MAX_ORDER];
+    ...
+};
+
+struct free_area
+{
+    struct list_head 		free_list[MIGRAE_Types];
+    unsigned nr_free;
+};
+
+free_area共有MAX_ORDER个元素 第order个元素记录了2^order大小的空闲块 这些空闲块以双向list的形式被组织起来 
+而不同类型相同大小的块被存储在了不同类型的list中，nr_free记录了该area的空闲块的数量 
+而默认的MAX_ORDER值为11 也就是说 最大可分配为2^10个页框 1024个 同等大小的内存块的链接就是以页框的起始地址为标准链接的 
+也就是链表的节点 也就是
+struct page
+{
+    ...
+    struct list_head lru;
+}  
+
+至于为什么需要用多条链表来管理相同大小的块 是因为内核中会有几种页框 有的可移动 有的不可移动 还有的可以将其删
+掉并在别的地方重新生成 所以分开来管理 就不会导致不可移动的块零散的插在内存中 导致大块内存无法被分配
+

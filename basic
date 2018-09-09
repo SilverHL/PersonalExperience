@@ -1951,5 +1951,28 @@ b.如果小报告里边的事情都是事实也就是说确实是本人做的不
 
 A．时间 b要求 c.方法
 
-原文链接
-https://www.cnblogs.com/nancymake/p/6516933.html
+关于野指针和悬空指针 
+野指针就是申请了内存但是未初始化的指针 悬空指针就是 指针指向的对象已经删除但是指针未被
+赋值成NULL 
+
+内存泄漏 检测工具 valgrind mtrace 
+
+static和const的区别 
+
+static是静态 被存放在bss段或data段 
+const是只读数据 C++的const数据都是在rodata段 
+
+在类中 static数据在类中只有一份 只能在类外初始化 static函数也无法与类建立联系 
+所以不能声明为virtual 而且也无法操作类内部的函数
+const数据只能在类的初始化列表中进行初始化 每个类中都会有一个 const成员函数无法修改类的数据
+
+从外部访问的时候 static函数可以通过函数名访问 const成员函数必须要通过对象访问
+
+const和define 
+const发挥作用是在编译和运行期  define只是在运行期 
+const是常量 带类型 define只是简单地符号替换 没有类型检查
+const还是占用对应的大小 但是define占用代码段空间
+
+
+
+

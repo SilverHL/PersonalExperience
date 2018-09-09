@@ -41,11 +41,12 @@ sigaction与signal的区别
     void (*signal(int num, void(*handler)(int)))(int)
     第二个参数可以为SIG_IGN 忽略信号 也可以是SIG_DFL 还可以是函数地址
 
-    int sigaction(int num, const sigaction *act, struct sigaction* oldact);
+    int sigaction(int num, const struct sigaction *act, struct sigaction* oldact);
     若二三参数为空 那么可以用来检测信号的有效性
 
     struct sigaction 
     {
+        //本机man手册中 并不是union 而是同时存在
         union 
         {
             sighandler_t sighandler;        //只能传递信号值
